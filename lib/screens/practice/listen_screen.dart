@@ -24,13 +24,17 @@ class _ListenScreenState extends State<ListenScreen> {
   @override
   void initState() {
     super.initState();
-    _tts.setLanguage('zh-CN');
-    _tts.awaitSpeakCompletion(true);
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    await _tts.setLanguage('zh-CN');
+    await _tts.awaitSpeakCompletion(true);
     _tts.setCompletionHandler(() {
-      setState(() {
-        _playing = false;
-        _statusText = '✓ 播放完毕，开始写吧';
-      });
+      if (mounted) setState(() { _playing = false; _statusText = '✓ 播放完毕，开始写吧'; });
+    });
+    _tts.setErrorHandler((msg) {
+      if (mounted) setState(() { _playing = false; _statusText = '⚠ 朗读失败，请检查设备 TTS 设置'; });
     });
   }
 

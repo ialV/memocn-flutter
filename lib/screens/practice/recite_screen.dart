@@ -34,10 +34,19 @@ class _ReciteScreenState extends State<ReciteScreen> {
   @override
   void initState() {
     super.initState();
-    _tts.setLanguage('zh-CN');
-    _tts.setSpeechRate(0.42);
-    _tts.awaitSpeakCompletion(true);
-    _tts.setCompletionHandler(() => setState(() => _playing = false));
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    await _tts.setLanguage('zh-CN');
+    await _tts.setSpeechRate(0.42);
+    await _tts.awaitSpeakCompletion(true);
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _playing = false);
+    });
+    _tts.setErrorHandler((msg) {
+      if (mounted) setState(() => _playing = false);
+    });
   }
 
   @override
