@@ -40,6 +40,7 @@ class _DetailScreenState extends State<DetailScreen> {
     super.initState();
     _tts.setLanguage('zh-CN');
     _tts.setSpeechRate(0.45);
+    _tts.awaitSpeakCompletion(true);
     _tts.setCompletionHandler(() => setState(() => _playing = false));
   }
 

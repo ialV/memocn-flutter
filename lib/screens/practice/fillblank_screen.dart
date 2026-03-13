@@ -26,15 +26,20 @@ class _FillblankScreenState extends State<FillblankScreen> {
   String _difficulty = 'medium';
   late List<_BlankItem> _blanks;
   late List<dynamic> _segments; // String or int (blank index)
+  late List<FocusNode> _focusNodes;
   final _startTime = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    _focusNodes = [];
     _build('medium');
   }
 
   void _build(String difficulty) {
+    // 释放旧的 FocusNode
+    for (final fn in _focusNodes) fn.dispose();
+
     final text = widget.article.content;
     final chars = text.split('');
     final chineseIndices = <int>[];
@@ -65,6 +70,14 @@ class _FillblankScreenState extends State<FillblankScreen> {
       }
     }
     if (buffer.isNotEmpty) _segments.add(buffer);
+
+    _focusNodes = List.generate(_blanks.length, (_) => FocusNode());
+  }
+
+  @override
+  void dispose() {
+    for (final fn in _focusNodes) fn.dispose();
+    super.dispose();
   }
 
   void _changeDifficulty(String d) {
@@ -127,7 +140,7 @@ class _FillblankScreenState extends State<FillblankScreen> {
                   ]),
                   const SizedBox(height: 6),
                   Text(
-                    '共 ${_blanks.length} 个空 · 输入正确字自动变绿',
+                    '共 ${_blanks.length} 个空 · 输入正确字自动跳下一格',
                     style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
                   ),
                 ]),
@@ -136,6 +149,7 @@ class _FillblankScreenState extends State<FillblankScreen> {
                 child: _FillblankText(
                   segments: _segments,
                   blanks: _blanks,
+                  focusNodes: _focusNodes,
                   onChanged: (idx, val) => setState(() => _blanks[idx].input = val),
                 ),
               ),
@@ -167,9 +181,15 @@ class _FillblankScreenState extends State<FillblankScreen> {
 class _FillblankText extends StatelessWidget {
   final List<dynamic> segments;
   final List<_BlankItem> blanks;
+  final List<FocusNode> focusNodes;
   final Function(int, String) onChanged;
 
-  const _FillblankText({required this.segments, required this.blanks, required this.onChanged});
+  const _FillblankText({
+    required this.segments,
+    required this.blanks,
+    required this.focusNodes,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -186,10 +206,14 @@ class _FillblankText extends StatelessWidget {
           Color bg = AppTheme.primaryLight;
           if (b.correct == true) { border = AppTheme.success; bg = AppTheme.successLight; }
           if (b.correct == false) { border = AppTheme.danger; bg = AppTheme.dangerLight; }
+          final nextFocus = b.index + 1 < focusNodes.length ? focusNodes[b.index + 1] : null;
           return _BlankField(
             value: b.input,
+            answer: b.answer,
             border: border,
             bg: bg,
+            focusNode: focusNodes[b.index],
+            nextFocus: nextFocus,
             onChanged: (v) {
               onChanged(b.index, v);
             },
@@ -202,10 +226,21 @@ class _FillblankText extends StatelessWidget {
 
 class _BlankField extends StatefulWidget {
   final String value;
+  final String answer;
   final Color border, bg;
+  final FocusNode focusNode;
+  final FocusNode? nextFocus;
   final ValueChanged<String> onChanged;
 
-  const _BlankField({required this.value, required this.border, required this.bg, required this.onChanged});
+  const _BlankField({
+    required this.value,
+    required this.answer,
+    required this.border,
+    required this.bg,
+    required this.focusNode,
+    required this.nextFocus,
+    required this.onChanged,
+  });
 
   @override
   State<_BlankField> createState() => _BlankFieldState();
@@ -247,6 +282,7 @@ class _BlankFieldState extends State<_BlankField> {
       ),
       child: TextField(
         controller: _ctrl,
+        focusNode: widget.focusNode,
         maxLength: 1,
         textAlign: TextAlign.center,
         style: const TextStyle(fontSize: 16),
@@ -256,7 +292,13 @@ class _BlankFieldState extends State<_BlankField> {
           contentPadding: EdgeInsets.zero,
           isDense: true,
         ),
-        onChanged: widget.onChanged,
+        onChanged: (v) {
+          widget.onChanged(v);
+          // 输入正确时自动跳到下一个空格
+          if (v == widget.answer && widget.nextFocus != null) {
+            widget.nextFocus!.requestFocus();
+          }
+        },
       ),
     );
   }

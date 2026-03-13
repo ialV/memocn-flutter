@@ -25,6 +25,7 @@ class _ListenScreenState extends State<ListenScreen> {
   void initState() {
     super.initState();
     _tts.setLanguage('zh-CN');
+    _tts.awaitSpeakCompletion(true);
     _tts.setCompletionHandler(() {
       setState(() {
         _playing = false;
