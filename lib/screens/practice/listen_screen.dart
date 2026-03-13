@@ -25,7 +25,7 @@ class _ListenScreenState extends State<ListenScreen> {
   void initState() {
     super.initState();
     _tts.setLanguage('zh-CN');
-    _tts.setOnCompletionHandler(() {
+    _tts.setCompletionHandler(() {
       setState(() {
         _playing = false;
         _statusText = '✓ 播放完毕，开始写吧';

@@ -36,7 +36,7 @@ class _ReciteScreenState extends State<ReciteScreen> {
     super.initState();
     _tts.setLanguage('zh-CN');
     _tts.setSpeechRate(0.42);
-    _tts.setOnCompletionHandler(() => setState(() => _playing = false));
+    _tts.setCompletionHandler(() => setState(() => _playing = false));
   }
 
   @override
